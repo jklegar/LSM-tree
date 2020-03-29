@@ -8,4 +8,5 @@ class Database {
 
   private:
     Manifest m;
+    int filename_idx;
 };

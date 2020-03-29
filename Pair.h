@@ -3,8 +3,10 @@ class Pair {
     Pair(Key k, Value v);
     Key get_key();
     Value get_value();
+    bool less_than(Pair p);
+    bool key_equals(Pair p);
 
   private:
-    Key k;
-    Value v;
+    Key key;
+    Value value;
 };

@@ -6,5 +6,5 @@ class Key {
     bool less_than(Key k);
 
   private:
-    static const int k;
+    static const int key;
 };

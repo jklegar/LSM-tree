@@ -4,6 +4,6 @@ class FencePointer {
     bool contains_in_range(Key k);
 
   private:
-    Key min;
-    Key max;
+    Key minimum;
+    Key maximum;
 };
