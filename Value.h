@@ -1,10 +1,15 @@
+#ifndef VALUE_H
+#define VALUE_H
+
 class Value {
   public:
-    Value(int v, bool is_del = False);
+    Value(int v, bool is_del = false);
     bool get_is_delete();
     int get();
 
   private:
-    static const int value;
-    static const bool is_delete;
+    int value;
+    bool is_delete;
 };
+
+#endif

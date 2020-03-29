@@ -1,12 +1,22 @@
+#ifndef BUFFER_H
+#define BUFFER_H
+
+#include "Key.h"
+#include "Options.h"
+#include "Pair.h"
+#include "Value.h"
+#include <string>
+using namespace std;
+
 class Buffer {
   public:
-    Buffer(bool is_n = False);
+    Buffer(bool is_n = false);
     void append(Pair p);
     bool is_full();
-    Pair read(i);
+    Pair read(int i);
     Pair read_last();
-    void save_to(std::string filename);
-    void load_from(std::string filename);
+    void save_to(string filename);
+    void load_from(string filename);
     void sort();
     bool is_null_buffer();
     bool unordered_find(Key k, Value* v);
@@ -16,4 +26,7 @@ class Buffer {
     Pair b [file_length];
     int idx;
     bool is_null;
+    bool ordered_find_bounds(Key k, Value* v, int low, int high);
 };
+
+#endif

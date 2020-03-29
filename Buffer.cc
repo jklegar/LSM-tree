@@ -1,7 +1,7 @@
 #include "Buffer.h"
 #include <fstream>
 
-Buffer::Buffer(bool is_n = False) {
+Buffer::Buffer(bool is_n) {
   idx = 0;
   is_null = is_n;
 }
@@ -10,7 +10,7 @@ bool Buffer::is_full() {
   return (idx == file_length);
 }
 
-Pair Buffer::read(i) {
+Pair Buffer::read(int i) {
   return b[i];
 }
 
@@ -27,7 +27,7 @@ void Buffer::append(Pair p) {
 void Buffer::save_to(std::string filename) {
   ofstream outfile;
   outfile.open(data_directory + filename);
-  outfile << b << std::endl;
+  outfile.write(reinterpret_cast<char*>(&b), sizeof(b));
   outfile.close();
   return;
 }
@@ -35,7 +35,7 @@ void Buffer::save_to(std::string filename) {
 void Buffer::load_from(std::string filename) {
   ifstream infile;
   infile.open(data_directory + filename);
-  infile >> b;
+  infile.read(reinterpret_cast<char*>(&b), sizeof(b));
   infile.close();
   idx = file_length;
   return;
@@ -65,7 +65,7 @@ bool Buffer::unordered_find(Key k, Value* v) {
   return false;
 }
 
-bool ordered_find_bounds(Key k, Value* v, int low, int high) {
+bool Buffer::ordered_find_bounds(Key k, Value* v, int low, int high) {
   int mid = (int)((low + high)/2);
   Pair p = read(mid);
   if (p.get_key().equals(k)) {

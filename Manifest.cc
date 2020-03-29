@@ -2,6 +2,8 @@
 
 Manifest::Manifest() {
   levels_number = 0;
+  Buffer b_backup(true);
+  buffer_backup = &b_backup;
 }
 
 void Manifest::set_buffer(Buffer *b) {
@@ -23,11 +25,11 @@ Buffer Manifest::get_buffer_backup() {
 }
 
 LevelInfo* Manifest::get_level(int level_number) {
-  return levels[level_number];
+  return &levels[level_number];
 }
 
 void Manifest::set_level(LevelInfo *level, int level_number) {
-  levels[level_number] = level;
+  levels[level_number] = *level;
   return;
 }
 

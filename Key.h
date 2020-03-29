@@ -1,3 +1,6 @@
+#ifndef KEY_H
+#define KEY_H
+
 class Key {
   public:
     Key(int k);
@@ -6,5 +9,7 @@ class Key {
     bool less_than(Key k);
 
   private:
-    static const int key;
+    int key;
 };
+
+#endif

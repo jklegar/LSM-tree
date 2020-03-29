@@ -1,3 +1,9 @@
+#ifndef MANIFEST_H
+#define MANIFEST_H
+
+#include "Buffer.h"
+#include "LevelInfo.h"
+
 class Manifest {
   public:
     Manifest();
@@ -13,6 +19,8 @@ class Manifest {
   private:
     LevelInfo *levels;
     Buffer *buffer;
-    Buffer *buffer_backup(is_n = True);
+    Buffer *buffer_backup;
     int levels_number;
 };
+
+#endif

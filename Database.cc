@@ -1,12 +1,8 @@
 #include "Database.h"
-#include "Options.h"
 #include <thread>
 #include <cmath>
 
 Database::Database() {
-  file_length = 10;
-  runs_per_level = 3;
-  bloom_filter_bits = 16;
   filename_idx = 0;
 }
 
@@ -18,12 +14,13 @@ void Database::write(Key k, Value v) {
     Buffer b_new;
     m.set_buffer_backup(&b);
     m.set_buffer(&b_new);
-    std::thread merge_thread(merge_buffer, b);
+    std::thread merge_thread(&Database::merge_buffer, this, b);
+    merge_thread.detach();
   }
   return;
 }
 
-std::string get_filename() {
+std::string Database::get_filename() {
   std::string s = std::to_string(filename_idx);
   filename_idx = filename_idx + 1;
   return s;
@@ -52,8 +49,8 @@ void Database::merge_buffer(Buffer b) {
   RunInfo run_info(bf);
   run_info.add_file(&file_info);
   m.get_level(0)->add_run(&run_info);
-  b = Buffer(is_n = True);
-  m.set_buffer_backup(b);
+  b = Buffer(true);
+  m.set_buffer_backup(&b);
   if (m.get_level(0)->is_full()) {
     merge(0);
   }
@@ -93,7 +90,7 @@ void Database::merge(int level_number) {
         idxs[i] = idxs[i] + 1;
         if (idxs[i] == file_length) {
           if (file_idxs[i] == m.get_level(level_number)->get_run(i)->get_files_number()) {
-            buffers[i] = Buffer(is_n = True);
+            buffers[i] = Buffer(true);
           }
           else {
             std::string filename = m.get_level(level_number)->get_run(i)->get_file(file_idxs[i]).get_filename();
@@ -107,20 +104,20 @@ void Database::merge(int level_number) {
     idxs[small_idx] = idxs[small_idx] + 1;
     if (idxs[small_idx] == file_length) {
       if (file_idxs[small_idx] == m.get_level(level_number)->get_run(small_idx)->get_files_number()) {
-        buffers[small_idx] = Buffer(is_n = True);
+        buffers[small_idx] = Buffer(true);
       }
       else {
-        std::string filename = m.get_level(level_number)->get_run(i)->get_file(file_idxs[small_idx]).get_filename();
+        std::string filename = m.get_level(level_number)->get_run(small_idx)->get_file(file_idxs[small_idx]).get_filename();
         buffers[small_idx].load_from(filename);
         file_idxs[small_idx] = file_idxs[small_idx] + 1;
         idxs[small_idx] = 0;
       }
     }
-    p = smallest_key_pair;
+    Pair p = smallest_key_pair;
     b.append(p);
     bf.add(p.get_key());
     if (b.is_full()) {
-      filename = get_filename();
+      string filename = get_filename();
       b.save_to(filename);
       FencePointer fp(b.read(0).get_key(), b.read_last().get_key());
       FileInfo file_info(filename, level_number+1, fp);
@@ -136,9 +133,9 @@ void Database::merge(int level_number) {
     m.increment_levels_number();
   }
   m.get_level(level_number+1)->add_run(&run_info);
-  RunInfo *runs_to_delete = m.get_level(level_number)->pop(runs_per_level);
+  RunInfo *runs_to_delete = m.get_level(level_number)->pop_runs(runs_per_level);
   for (int i=0; i<runs_per_level; i++) {
-    RunInfo run_info = *runs_to_delete[i];
+    RunInfo run_info = runs_to_delete[i];
     run_info.delete_all_files();
   }
   if (m.get_level(level_number+1)->is_full()) {
@@ -148,7 +145,7 @@ void Database::merge(int level_number) {
 }
 
 Value Database::read(Key k) {
-  Value v;
+  Value v(0);
   if (m.get_buffer().unordered_find(k, &v)) {
     return v;
   }
@@ -179,5 +176,5 @@ Value Database::read(Key k) {
       }
     }
   }
-  return Value(0, is_del = True);
+  return Value(0, true);
 }

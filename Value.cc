@@ -1,6 +1,6 @@
 #include "Value.h"
 
-Value::Value(int v, bool is_del = False)
+Value::Value(int v, bool is_del)
   : value(v)
   , is_delete(is_del) {
 }

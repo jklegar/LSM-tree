@@ -1,3 +1,10 @@
+#ifndef RUNINFO_H
+#define RUNINFO_H
+
+#include "BloomFilter.h"
+#include "FileInfo.h"
+#include "Key.h"
+
 class RunInfo {
   public:
     RunInfo(BloomFilter bf);
@@ -13,3 +20,5 @@ class RunInfo {
     BloomFilter bloom_filter;
     int files_number;
 };
+
+#endif

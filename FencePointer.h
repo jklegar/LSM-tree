@@ -1,3 +1,8 @@
+#ifndef FENCEPOINTER_H
+#define FENCEPOINTER_H
+
+#include "Key.h"
+
 class FencePointer {
   public:
     FencePointer(Key min, Key max);
@@ -7,3 +12,5 @@ class FencePointer {
     Key minimum;
     Key maximum;
 };
+
+#endif

@@ -1,5 +1,11 @@
 #include "Pair.h"
 
+// default constructor
+Pair::Pair()
+  : key(Key(0))
+  , value(Value(0)) {
+}
+
 Pair::Pair(Key k, Value v)
   : key(k)
   , value(v) {
