@@ -4,9 +4,12 @@
 #include <string>
 using namespace std;
 
-constexpr int file_length { 10 };
+constexpr int file_length { 2 };
 constexpr int runs_per_level { 3 };
 constexpr int bloom_filter_bits { 16 };
+constexpr int max_levels { 16 };
+constexpr int max_files_per_run { 32 };
+constexpr int max_runs = { 32 };
 constexpr char data_directory[] = "/";
 
 #endif

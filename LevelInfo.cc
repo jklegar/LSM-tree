@@ -2,6 +2,7 @@
 
 LevelInfo::LevelInfo() {
   idx = 0;
+  runs = new RunInfo* [max_runs];
 }
 
 void LevelInfo::add_run(RunInfo* run) {
@@ -33,4 +34,5 @@ LevelInfo::~LevelInfo() {
   for (int i=0; i<get_runs_number(); i++) {
     delete get_run(i);
   }
+  delete runs;
 }

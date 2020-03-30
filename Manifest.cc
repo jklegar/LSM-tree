@@ -4,6 +4,7 @@ Manifest::Manifest() {
   levels_number = 0;
   buffer = new Buffer();
   buffer_backup = new Buffer(true);
+  levels = new LevelInfo* [max_levels];
 }
 
 void Manifest::set_buffer(Buffer *b) {
@@ -48,4 +49,5 @@ Manifest::~Manifest() {
   for (int i=0; i<get_levels_number(); i++) {
     delete get_level(i);
   }
+  delete levels;
 }

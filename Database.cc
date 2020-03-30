@@ -84,12 +84,15 @@ void Database::merge(int level_number) {
     }
     Pair smallest_key_pair = buffers[small_idx]->read(idxs[small_idx]);
     for (int i=small_idx-1; i>=0; i--) {
+      if (buffers[i]->is_null_buffer()) {
+        continue;
+      }
       Pair p = buffers[i]->read(idxs[i]);
       if (p.less_than(smallest_key_pair)) {
         smallest_key_pair = p;
         small_idx = i;
       }
-      if (p.key_equals(smallest_key_pair)) {
+      else if (p.key_equals(smallest_key_pair)) {
         idxs[i] = idxs[i] + 1;
         if (idxs[i] == file_length) {
           if (file_idxs[i] == m.get_level(level_number)->get_run(i)->get_files_number()) {
@@ -133,7 +136,7 @@ void Database::merge(int level_number) {
   }
 
   // update manifest
-  if (m.get_levels_number() == level_number) {
+  if (m.get_levels_number() == level_number+1) {
     LevelInfo* level_info = new LevelInfo();
     m.set_level(level_info, level_number+1);
     m.increment_levels_number();

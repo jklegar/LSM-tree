@@ -3,6 +3,7 @@
 RunInfo::RunInfo(BloomFilter* bf)
   : bloom_filter(bf) {
   files_number = 0;
+  files = new FileInfo* [max_files_per_run];
 }
 
 void RunInfo::add_file(FileInfo* f) {
@@ -35,4 +36,5 @@ RunInfo::~RunInfo() {
   for (int i=0; i<get_files_number(); i++) {
     delete get_file(i);
   }
+  delete files;
 }
