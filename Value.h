@@ -8,7 +8,7 @@ class Value {
     int get();
 
   private:
-    int value;
+    int value; // will be 0 if is_delete=true
     bool is_delete;
 };
 

@@ -6,7 +6,7 @@
 
 class Pair {
   public:
-    Pair();
+    Pair(); // default constructor
     Pair(Key k, Value v);
     Key get_key();
     Value get_value();

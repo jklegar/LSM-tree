@@ -23,8 +23,8 @@ class Buffer {
     bool ordered_find(Key k, Value* v);
 
   private:
-    Pair b [file_length];
-    int idx;
+    Pair b [file_length]; // gets initialized here using Pair's default constructor
+    int idx; // always equals number of pairs in the buffer
     bool is_null;
     bool ordered_find_bounds(Key k, Value* v, int low, int high);
 };

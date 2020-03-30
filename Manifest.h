@@ -9,15 +9,16 @@ class Manifest {
     Manifest();
     void set_buffer(Buffer *b);
     void set_buffer_backup(Buffer *b);
-    Buffer get_buffer();
-    Buffer get_buffer_backup();
+    Buffer* get_buffer();
+    Buffer* get_buffer_backup();
     LevelInfo* get_level(int level_number);
     void set_level(LevelInfo *level, int level_number);
     int get_levels_number();
     void increment_levels_number();
+    ~Manifest();
 
   private:
-    LevelInfo *levels;
+    LevelInfo** levels; // pointer to array of pointers
     Buffer *buffer;
     Buffer *buffer_backup;
     int levels_number;
