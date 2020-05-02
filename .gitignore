@@ -1,0 +1,4 @@
+*.swp
+output*
+benchmark/
+data/

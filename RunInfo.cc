@@ -1,12 +1,13 @@
 #include "RunInfo.h"
 
-RunInfo::RunInfo(BloomFilter* bf)
-  : bloom_filter(bf) {
+RunInfo::RunInfo(int hashes) {
   files_number = 0;
   files = new FileInfo* [max_files_per_run];
+  bloom_filter = new BloomFilter(bloom_filter_bits, hashes);
 }
 
-void RunInfo::add_file(FileInfo* f) {
+void RunInfo::add_file(std::string filename, int level_no, FencePointer fp) {
+  FileInfo* f = new FileInfo(filename, level_no, fp);
   files[files_number] = f;
   files_number = files_number + 1;
   return;
@@ -18,6 +19,11 @@ FileInfo* RunInfo::get_file(int idx) {
 
 bool RunInfo::possibly_contains(Key k) {
   return bloom_filter->possibly_contains(k);
+}
+
+void RunInfo::add_to_filter(Key k) {
+  bloom_filter->add(k);
+  return;
 }
 
 int RunInfo::get_files_number() {
@@ -36,5 +42,5 @@ RunInfo::~RunInfo() {
   for (int i=0; i<get_files_number(); i++) {
     delete get_file(i);
   }
-  delete files;
+  delete[] files;
 }

@@ -12,6 +12,7 @@ class Pair {
     Value get_value();
     bool less_than(Pair p);
     bool key_equals(Pair p);
+    void print();
 
   private:
     Key key;

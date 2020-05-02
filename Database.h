@@ -15,6 +15,7 @@ class Database {
     void merge_buffer(Buffer* b);
     void merge(int level_number);
     Value read(Key k);
+    void print_all();
 
   private:
     Manifest m; // initialized here

@@ -12,9 +12,10 @@ class Manifest {
     Buffer* get_buffer();
     Buffer* get_buffer_backup();
     LevelInfo* get_level(int level_number);
-    void set_level(LevelInfo *level, int level_number);
     int get_levels_number();
-    void increment_levels_number();
+    void roll_buffer();
+    void remove_backup();
+    void add_level();
     ~Manifest();
 
   private:

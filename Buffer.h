@@ -21,6 +21,7 @@ class Buffer {
     bool is_null_buffer();
     bool unordered_find(Key k, Value* v);
     bool ordered_find(Key k, Value* v);
+    void print();
 
   private:
     Pair b [file_length]; // gets initialized here using Pair's default constructor

@@ -1,4 +1,5 @@
 #include "Pair.h"
+#include <iostream>
 
 // default constructor
 Pair::Pair()
@@ -25,4 +26,8 @@ bool Pair::less_than(Pair p) {
 
 bool Pair::key_equals(Pair p) {
   return get_key().equals(p.get_key());
+}
+
+void Pair::print() {
+  std::cout << get_key().get() << " " << get_value().get() << std::endl;
 }

@@ -86,3 +86,9 @@ bool Buffer::ordered_find_bounds(Key k, Value* v, int low, int high) {
 bool Buffer::ordered_find(Key k, Value* v) {
   return ordered_find_bounds(k, v, 0, idx-1);
 }
+
+void Buffer::print() {
+  for (int i=0; i<idx; i++) {
+    b[i].print();
+  }
+}

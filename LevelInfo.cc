@@ -5,10 +5,11 @@ LevelInfo::LevelInfo() {
   runs = new RunInfo* [max_runs];
 }
 
-void LevelInfo::add_run(RunInfo* run) {
+RunInfo* LevelInfo::add_run(int hashes) {
+  RunInfo* run = new RunInfo(hashes);
   runs[idx] = run;
   idx = idx + 1;
-  return;
+  return run;
 }
 
 RunInfo* LevelInfo::get_run(int i) {
@@ -19,11 +20,19 @@ bool LevelInfo::is_full() {
   return (idx == runs_per_level);
 }
 
-RunInfo** LevelInfo::pop_runs(int n) {
-  RunInfo** array_start = runs;
-  runs = &runs[n];
+void LevelInfo::pop_runs(int n) {
+  RunInfo** old_runs = runs;
+  for (int i=0; i<n; i++) {
+    old_runs[i]->delete_all_files();
+    delete old_runs[i];
+  }
+  runs = new RunInfo* [max_runs];
+  for (int i=n; i<get_runs_number(); i++) {
+    runs[i-n] = old_runs[i];
+  }
+  delete[] old_runs;
   idx = idx - n;
-  return array_start;
+  return;
 }
 
 int LevelInfo::get_runs_number() {
@@ -34,5 +43,5 @@ LevelInfo::~LevelInfo() {
   for (int i=0; i<get_runs_number(); i++) {
     delete get_run(i);
   }
-  delete runs;
+  delete[] runs;
 }

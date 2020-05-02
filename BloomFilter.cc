@@ -11,12 +11,13 @@ BloomFilter::BloomFilter(int b, int hashes_no)
 
 array<uint64_t, 2> hash_key(Key k) {
   array<uint64_t, 2> result;
-  MurmurHash3_x64_128(&k, sizeof(k), 0, result.data());
+  int k_int = k.get();
+  MurmurHash3_x64_128(&k_int, sizeof(int), 0, result.data());
   return result;
 }
 
 uint64_t get_hash(uint64_t hash1, uint64_t hash2, int i, int bits) {
-  return (hash1 + i * hash2) % (1<<bits);
+  return (hash1 + i * hash2) % bits;
 }
 
 void BloomFilter::add(Key k) {

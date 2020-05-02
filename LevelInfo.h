@@ -7,10 +7,10 @@
 class LevelInfo {
   public:
     LevelInfo();
-    void add_run(RunInfo* run);
+    RunInfo* add_run(int hashes);
     RunInfo* get_run(int i);
     bool is_full();
-    RunInfo** pop_runs(int n);
+    void pop_runs(int n);
     int get_runs_number();
     ~LevelInfo();
 

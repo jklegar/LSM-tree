@@ -11,12 +11,9 @@ void Database::write(Key k, Value v) {
   Buffer* b = m.get_buffer();
   b->append(p);
   if (b->is_full()) {
-    Buffer* b_new = new Buffer();
-    delete m.get_buffer_backup();
-    m.set_buffer_backup(b);
-    m.set_buffer(b_new);
+    m.roll_buffer();
     std::thread merge_thread(&Database::merge_buffer, this, b);
-    merge_thread.detach();
+    merge_thread.join();
   }
   return;
 }
@@ -37,22 +34,16 @@ void Database::merge_buffer(Buffer* b) {
   std::string filename = get_filename();
   b->save_to(filename);
   if (m.get_levels_number() == 0) {
-    LevelInfo* level_info = new LevelInfo();
-    m.set_level(level_info, 0);
-    m.increment_levels_number();
+    m.add_level();
   }
   FencePointer fp(b->read(0).get_key(), b->read_last().get_key());
-  FileInfo* file_info = new FileInfo(filename, 0, fp);
-  BloomFilter* bf = new BloomFilter(bloom_filter_bits, calculate_hashes(bloom_filter_bits, file_length));
+  int hashes = calculate_hashes(bloom_filter_bits, file_length);
+  RunInfo* run_info = m.get_level(0)->add_run(hashes);
   for (int i=0; i<file_length; i++) {
-    bf->add(b->read(i).get_key());
+    run_info->add_to_filter(b->read(i).get_key());
   }
-  RunInfo* run_info = new RunInfo(bf);
-  run_info->add_file(file_info);
-  m.get_level(0)->add_run(run_info);
-  Buffer* b_null = new Buffer(true);
-  delete m.get_buffer_backup();
-  m.set_buffer_backup(b_null);
+  run_info->add_file(filename, 0, fp);
+  m.remove_backup();
   if (m.get_level(0)->is_full()) {
     merge(0);
   }
@@ -72,8 +63,11 @@ void Database::merge(int level_number) {
   }
   Buffer* b = new Buffer();
 
-  BloomFilter* bf = new BloomFilter(bloom_filter_bits, calculate_hashes(bloom_filter_bits, file_length * (int)std::pow(runs_per_level, level_number+1)));
-  RunInfo* run_info = new RunInfo(bf);
+  int hashes = calculate_hashes(bloom_filter_bits, file_length * (int)std::pow(runs_per_level, level_number+1));
+  if (m.get_levels_number() == level_number+1) {
+    m.add_level();
+  }
+  RunInfo* run_info = m.get_level(level_number+1)->add_run(hashes);
   while (true) {
     int small_idx = runs_per_level-1;
     while (small_idx >= 0 && buffers[small_idx]->is_null_buffer()) {
@@ -123,31 +117,23 @@ void Database::merge(int level_number) {
     }
     Pair p = smallest_key_pair;
     b->append(p);
-    bf->add(p.get_key());
+    run_info->add_to_filter(p.get_key());
     if (b->is_full()) {
       string filename = get_filename();
       b->save_to(filename);
       FencePointer fp(b->read(0).get_key(), b->read_last().get_key());
-      FileInfo* file_info = new FileInfo(filename, level_number+1, fp);
-      run_info->add_file(file_info);
+      run_info->add_file(filename, level_number+1, fp);
       delete b;
       b = new Buffer();
     }
   }
+  for (int i=0; i<runs_per_level; i++) {
+    delete buffers[i];
+  }
+  delete b;
 
   // update manifest
-  if (m.get_levels_number() == level_number+1) {
-    LevelInfo* level_info = new LevelInfo();
-    m.set_level(level_info, level_number+1);
-    m.increment_levels_number();
-  }
-  m.get_level(level_number+1)->add_run(run_info);
-  RunInfo** runs_to_delete = m.get_level(level_number)->pop_runs(runs_per_level);
-  for (int i=0; i<runs_per_level; i++) {
-    RunInfo* run_info = runs_to_delete[i];
-    run_info->delete_all_files();
-    delete run_info;
-  }
+  m.get_level(level_number)->pop_runs(runs_per_level);
   if (m.get_level(level_number+1)->is_full()) {
     merge(level_number+1);
   }
@@ -181,10 +167,32 @@ Value Database::read(Key k) {
         }
         b->load_from(file_info->get_filename());
         if (b->ordered_find(k, &v)) {
+          delete b;
           return v;
         }
       }
     }
   }
+  delete b;
   return Value(0, true);
+}
+
+void Database::print_all() {
+  m.get_buffer()->print();
+  m.get_buffer_backup()->print();
+
+  Buffer* b = new Buffer();
+  for (int i=0; i<m.get_levels_number(); i++) {
+    LevelInfo* level_info = m.get_level(i);
+    for (int j=level_info->get_runs_number()-1; j>=0; j--) {
+      RunInfo* run_info = level_info->get_run(j);
+      for (int t=0; t<run_info->get_files_number(); t++) {
+        FileInfo* file_info = run_info->get_file(t);
+        b->load_from(file_info->get_filename());
+        b->print();
+      }
+    }
+  }
+  delete b;
+  return;
 }
