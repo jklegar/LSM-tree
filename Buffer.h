@@ -13,6 +13,8 @@ class Buffer {
     Buffer(bool is_n = false);
     void append(Pair p);
     bool is_full();
+    bool is_empty();
+    int len();
     Pair read(int i);
     Pair read_last();
     void save_to(string filename);

@@ -10,6 +10,14 @@ bool Buffer::is_full() {
   return (idx == file_length);
 }
 
+bool Buffer::is_empty() {
+  return (idx == 0);
+}
+
+int Buffer::len() {
+  return idx;
+}
+
 Pair Buffer::read(int i) {
   return b[i];
 }
@@ -27,7 +35,8 @@ void Buffer::append(Pair p) {
 void Buffer::save_to(std::string filename) {
   ofstream outfile;
   outfile.open(data_directory + filename);
-  outfile.write(reinterpret_cast<char*>(&b), sizeof(b));
+  outfile.write(reinterpret_cast<char*>(&idx), sizeof(idx));
+  outfile.write(reinterpret_cast<char*>(&b), sizeof(Pair)*idx);
   outfile.close();
   return;
 }
@@ -35,9 +44,9 @@ void Buffer::save_to(std::string filename) {
 void Buffer::load_from(std::string filename) {
   ifstream infile;
   infile.open(data_directory + filename);
-  infile.read(reinterpret_cast<char*>(&b), sizeof(b));
+  infile.read(reinterpret_cast<char*>(&idx), sizeof(idx));
+  infile.read(reinterpret_cast<char*>(&b), sizeof(Pair)*idx);
   infile.close();
-  idx = file_length;
   return;
 }
 
@@ -45,8 +54,16 @@ bool less_than(Pair p1, Pair p2) {
   return p1.less_than(p2);
 }
 
+bool key_equals(Pair p1, Pair p2) {
+  return p1.key_equals(p2);
+}
+
 void Buffer::sort() {
-  std::sort(b, b+file_length, less_than);
+  std::stable_sort(b, b+file_length, less_than);
+  std::reverse(b, b+file_length);
+  auto uniq_end = std::unique(b, b+file_length, key_equals);
+  idx = std::distance(b, uniq_end);
+  std::reverse(b, b+idx);
   return;
 }
 

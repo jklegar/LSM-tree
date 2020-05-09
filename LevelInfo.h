@@ -3,6 +3,7 @@
 
 #include "Options.h"
 #include "RunInfo.h"
+#include <deque>
 
 class LevelInfo {
   public:
@@ -15,7 +16,7 @@ class LevelInfo {
     ~LevelInfo();
 
   private:
-    RunInfo** runs; // pointer to array of pointers
+    std::deque<RunInfo*> runs; // pointer to array of pointers
     int idx;
 };
 

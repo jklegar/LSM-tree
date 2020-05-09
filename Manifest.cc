@@ -5,6 +5,7 @@ Manifest::Manifest() {
   buffer = new Buffer();
   buffer_backup = new Buffer(true);
   levels = new LevelInfo* [max_levels];
+  mlevels = new std::mutex [max_levels];
 }
 
 void Manifest::set_buffer(Buffer *b) {
@@ -60,4 +61,5 @@ Manifest::~Manifest() {
     delete get_level(i);
   }
   delete[] levels;
+  delete[] mlevels;
 }

@@ -3,6 +3,7 @@
 
 #include "Buffer.h"
 #include "LevelInfo.h"
+#include <mutex>
 
 class Manifest {
   public:
@@ -17,6 +18,9 @@ class Manifest {
     void remove_backup();
     void add_level();
     ~Manifest();
+    std::mutex mbuffer;
+    std::mutex mbuffer_backup;
+    std::mutex* mlevels;
 
   private:
     LevelInfo** levels; // pointer to array of pointers

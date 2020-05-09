@@ -1,6 +1,7 @@
 #include "Database.h"
 #include <thread>
 #include <cmath>
+#include <iostream>
 
 Database::Database() {
   filename_idx = 0;
@@ -8,19 +9,27 @@ Database::Database() {
 
 void Database::write(Key k, Value v) {
   Pair p = Pair(k, v);
+  m.mbuffer.lock();
   Buffer* b = m.get_buffer();
   b->append(p);
   if (b->is_full()) {
+    m.mbuffer_backup.lock();
     m.roll_buffer();
+    m.mbuffer.unlock();
     std::thread merge_thread(&Database::merge_buffer, this, b);
-    merge_thread.join();
+    merge_thread.detach();
+  }
+  else {
+    m.mbuffer.unlock();
   }
   return;
 }
 
 std::string Database::get_filename() {
+  mfilename_idx.lock();
   std::string s = std::to_string(filename_idx);
   filename_idx = filename_idx + 1;
+  mfilename_idx.unlock();
   return s;
 }
 
@@ -33,41 +42,69 @@ void Database::merge_buffer(Buffer* b) {
   b->sort();
   std::string filename = get_filename();
   b->save_to(filename);
+  madd_level.lock();
   if (m.get_levels_number() == 0) {
     m.add_level();
   }
+  madd_level.unlock();
   FencePointer fp(b->read(0).get_key(), b->read_last().get_key());
   int hashes = calculate_hashes(bloom_filter_bits, file_length);
+  int merge_num = -1; // -1 means will not merge
+  m.mlevels[0].lock();
   RunInfo* run_info = m.get_level(0)->add_run(hashes);
-  for (int i=0; i<file_length; i++) {
+  if (m.get_level(0)->is_full()) {
+    merges_started[0]++;
+    merge_num = merges_started[0] - 1;
+    m.mlevels[0].unlock();
+  }
+  else {
+    m.mlevels[0].unlock();
+  }
+  for (int i=0; i<b->len(); i++) {
     run_info->add_to_filter(b->read(i).get_key());
   }
   run_info->add_file(filename, 0, fp);
   m.remove_backup();
-  if (m.get_level(0)->is_full()) {
-    merge(0);
+  m.mbuffer_backup.unlock();
+  if (merge_num != -1) {
+    std::thread merge_thread(&Database::merge, this, 0, merge_num);
+    merge_thread.detach();
   }
   return;
 }
 
-void Database::merge(int level_number) {
+void Database::merge(int level_number, int merge_num) {
   int idxs [runs_per_level];
   int file_idxs [runs_per_level];
   Buffer* buffers [runs_per_level]; // initializes them all with the default constructor
   for (int i=0; i<runs_per_level; i++) {
     idxs[i] = 0;
-    std::string filename = m.get_level(level_number)->get_run(i)->get_file(0)->get_filename();
+    m.mlevels[level_number].lock();
+    std::string filename = m.get_level(level_number)->get_run((merge_num-merges_finished[level_number])*runs_per_level+i)->get_file(0)->get_filename();
     buffers[i] = new Buffer();
     buffers[i]->load_from(filename);
+    m.mlevels[level_number].unlock();
     file_idxs[i] = 1;
   }
   Buffer* b = new Buffer();
 
   int hashes = calculate_hashes(bloom_filter_bits, file_length * (int)std::pow(runs_per_level, level_number+1));
+  madd_level.lock();
   if (m.get_levels_number() == level_number+1) {
     m.add_level();
   }
+  madd_level.unlock();
+  int new_merge_num = -1; // -1 means will not merge
+  m.mlevels[level_number+1].lock();
   RunInfo* run_info = m.get_level(level_number+1)->add_run(hashes);
+  if (m.get_level(level_number+1)->is_full()) {
+    merges_started[level_number+1]++;
+    new_merge_num = merges_started[level_number+1] - 1;
+    m.mlevels[level_number+1].unlock();
+  }
+  else {
+    m.mlevels[level_number+1].unlock();
+  }
   while (true) {
     int small_idx = runs_per_level-1;
     while (small_idx >= 0 && buffers[small_idx]->is_null_buffer()) {
@@ -88,14 +125,17 @@ void Database::merge(int level_number) {
       }
       else if (p.key_equals(smallest_key_pair)) {
         idxs[i] = idxs[i] + 1;
-        if (idxs[i] == file_length) {
-          if (file_idxs[i] == m.get_level(level_number)->get_run(i)->get_files_number()) {
+        if (idxs[i] == buffers[i]->len()) {
+          m.mlevels[level_number].lock();
+          if (file_idxs[i] == m.get_level(level_number)->get_run((merge_num-merges_finished[level_number])*runs_per_level+i)->get_files_number()) {
+            m.mlevels[level_number].unlock();
             delete buffers[i];
             buffers[i] = new Buffer(true);
           }
           else {
-            std::string filename = m.get_level(level_number)->get_run(i)->get_file(file_idxs[i])->get_filename();
+            std::string filename = m.get_level(level_number)->get_run((merge_num-merges_finished[level_number])*runs_per_level+i)->get_file(file_idxs[i])->get_filename();
             buffers[i]->load_from(filename);
+            m.mlevels[level_number].unlock();
             file_idxs[i] = file_idxs[i] + 1;
             idxs[i] = 0;
           }
@@ -103,14 +143,17 @@ void Database::merge(int level_number) {
       }
     }
     idxs[small_idx] = idxs[small_idx] + 1;
-    if (idxs[small_idx] == file_length) {
-      if (file_idxs[small_idx] == m.get_level(level_number)->get_run(small_idx)->get_files_number()) {
+    if (idxs[small_idx] == buffers[small_idx]->len()) {
+      m.mlevels[level_number].lock();
+      if (file_idxs[small_idx] == m.get_level(level_number)->get_run((merge_num-merges_finished[level_number])*runs_per_level+small_idx)->get_files_number()) {
+        m.mlevels[level_number].unlock();
         delete buffers[small_idx];
         buffers[small_idx] = new Buffer(true);
       }
       else {
-        std::string filename = m.get_level(level_number)->get_run(small_idx)->get_file(file_idxs[small_idx])->get_filename();
+        std::string filename = m.get_level(level_number)->get_run((merge_num-merges_finished[level_number])*runs_per_level+small_idx)->get_file(file_idxs[small_idx])->get_filename();
         buffers[small_idx]->load_from(filename);
+        m.mlevels[level_number].unlock();
         file_idxs[small_idx] = file_idxs[small_idx] + 1;
         idxs[small_idx] = 0;
       }
@@ -127,15 +170,25 @@ void Database::merge(int level_number) {
       b = new Buffer();
     }
   }
+  if (!b->is_empty()) {
+    string filename = get_filename();
+    b->save_to(filename);
+    FencePointer fp(b->read(0).get_key(), b->read_last().get_key());
+    run_info->add_file(filename, level_number+1, fp);
+  }
   for (int i=0; i<runs_per_level; i++) {
     delete buffers[i];
   }
   delete b;
 
   // update manifest
+  m.mlevels[level_number].lock();
   m.get_level(level_number)->pop_runs(runs_per_level);
-  if (m.get_level(level_number+1)->is_full()) {
-    merge(level_number+1);
+  merges_finished[level_number]++;
+  m.mlevels[level_number].unlock();
+  if (new_merge_num != -1) {
+    std::thread merge_thread(&Database::merge, this, level_number+1, new_merge_num);
+    merge_thread.detach();
   }
   return;
 }
@@ -154,8 +207,9 @@ Value Database::read(Key k) {
 
   Buffer* b = new Buffer();
   for (int i=0; i<m.get_levels_number(); i++) {
+    m.mlevels[i].lock();
     LevelInfo* level_info = m.get_level(i);
-    for (int j=level_info->get_runs_number()-1; j>=0; j--) {
+    for (int j = level_info->get_runs_number()-1; j>=0; j--) {
       RunInfo* run_info = level_info->get_run(j);
       if (!run_info->possibly_contains(k)) {
         continue;
@@ -168,10 +222,12 @@ Value Database::read(Key k) {
         b->load_from(file_info->get_filename());
         if (b->ordered_find(k, &v)) {
           delete b;
+          m.mlevels[i].unlock();
           return v;
         }
       }
     }
+    m.mlevels[i].unlock();
   }
   delete b;
   return Value(0, true);
@@ -183,8 +239,10 @@ void Database::print_all() {
 
   Buffer* b = new Buffer();
   for (int i=0; i<m.get_levels_number(); i++) {
+    std::cout << "Level " << i << std::endl;
+    m.mlevels[i].lock();
     LevelInfo* level_info = m.get_level(i);
-    for (int j=level_info->get_runs_number()-1; j>=0; j--) {
+    for (int j = level_info->get_runs_number()-1; j>=0; j--) {
       RunInfo* run_info = level_info->get_run(j);
       for (int t=0; t<run_info->get_files_number(); t++) {
         FileInfo* file_info = run_info->get_file(t);
@@ -192,6 +250,7 @@ void Database::print_all() {
         b->print();
       }
     }
+    m.mlevels[i].unlock();
   }
   delete b;
   return;
