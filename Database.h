@@ -17,6 +17,7 @@ class Database {
     void merge_buffer(Buffer* b);
     void merge(int level_number, int merge_num);
     Value read(Key k);
+    map<Key, Value> read_range(Key k_1, Key k_2);
     void print_stats();
 
   private:

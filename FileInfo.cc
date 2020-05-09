@@ -20,6 +20,10 @@ bool FileInfo::contains_in_range(Key k) {
   return fence_pointer.contains_in_range(k);
 }
 
+bool FileInfo::is_between(Key k_1, Key k_2) {
+  return fence_pointer.is_between(k_1, k_2);
+}
+
 void FileInfo::delete_file() {
   remove((data_directory + filename).c_str());
   return;

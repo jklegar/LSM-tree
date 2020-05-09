@@ -239,6 +239,43 @@ Value Database::read(Key k) {
   return Value(0, true);
 }
 
+map<Key, Value> Database::read_range(Key k_1, Key k_2) {
+  map<Key, Value> results;
+  m.get_buffer()->unordered_find_range(k_1, k_2, &results);
+  Buffer* b_backup = m.get_buffer_backup();
+  if (!b_backup->is_null_buffer()) {
+    b_backup->unordered_find_range(k_1, k_2, &results);
+  }
+
+  Buffer* b = new Buffer();
+  for (int i=0; i<m.get_levels_number(); i++) {
+    m.mlevels[i].lock();
+    LevelInfo* level_info = m.get_level(i);
+    for (int j = level_info->get_runs_number()-1; j>=0; j--) {
+      RunInfo* run_info = level_info->get_run(j);
+      for (int t=0; t<run_info->get_files_number(); t++) {
+        FileInfo* file_info = run_info->get_file(t);
+        if (!file_info->is_between(k_1, k_2)) {
+          continue;
+        }
+        b->load_from(file_info->get_filename());
+        if (file_info->contains_in_range(k_1) && file_info->contains_in_range(k_2)) {
+          b->ordered_find_within(k_1, k_2, &results);
+        } else if (file_info->contains_in_range(k_1)) {
+          b->ordered_find_upper(k_1, &results);
+        } else if (file_info->contains_in_range(k_2)) {
+          b->ordered_find_lower(k_2, &results);
+        } else {
+          b->ordered_find_all(&results);
+        }
+      }
+    }
+    m.mlevels[i].unlock();
+  }
+  delete b;
+  return results;
+}
+
 void Database::print_stats() {
   std::set<Key> existing_keys;
   std::set<Key> deleted_keys;

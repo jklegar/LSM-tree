@@ -13,6 +13,7 @@ class FileInfo {
     string get_filename();
     int get_level_number();
     bool contains_in_range(Key k);
+    bool is_between(Key k_1, Key k_2);
     void delete_file();
 
   private:

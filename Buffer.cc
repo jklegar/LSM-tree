@@ -82,6 +82,16 @@ bool Buffer::unordered_find(Key k, Value* v) {
   return false;
 }
 
+void Buffer::unordered_find_range(Key k_1, Key k_2, map<Key, Value>* results) {
+  for (int i=idx-1; i>=0; i--) {
+    Pair p = read(i);
+    if (p.get_key().is_within(k_1, k_2)) {
+      results->insert(std::pair<Key, Value>(p.get_key(), p.get_value())); // will not insert if duplicate key
+    }
+  }
+  return;
+}
+
 bool Buffer::ordered_find_bounds(Key k, Value* v, int low, int high) {
   int mid = (int)((low + high)/2);
   Pair p = read(mid);
@@ -89,8 +99,11 @@ bool Buffer::ordered_find_bounds(Key k, Value* v, int low, int high) {
     *v = p.get_value();
     return true;
   }
-  if (mid == high) {
+  if (low == high) {
     return false;
+  }
+  if (low+1 == high) {
+    return ordered_find_bounds(k, v, high, high);
   }
   if (p.get_key().less_than(k)) {
     return ordered_find_bounds(k, v, mid+1, high);
@@ -100,8 +113,89 @@ bool Buffer::ordered_find_bounds(Key k, Value* v, int low, int high) {
   }
 }
 
+int Buffer::ordered_find_leq(Key k, int low, int high) {
+  int mid = (int)((low + high)/2);
+  Pair p = read(mid);
+  if (p.get_key().equals(k)) {
+    return mid;
+  }
+  if (low == high) {
+    if (p.get_key().less_than(k)) {
+      return mid;
+    } else {
+      return mid-1;
+    }
+  }
+  if (low+1 == high) {
+    return ordered_find_leq(k, high, high);
+  }
+  if (p.get_key().less_than(k)) {
+    return ordered_find_leq(k, mid+1, high);
+  }
+  else {
+    return ordered_find_leq(k, low, mid-1);
+  }
+}
+
+int Buffer::ordered_find_geq(Key k, int low, int high) {
+  int mid = (int)((low + high)/2);
+  Pair p = read(mid);
+  if (p.get_key().equals(k)) {
+    return mid;
+  }
+  if (low == high) {
+    if (p.get_key().less_than(k)) {
+      return mid+1;
+    } else {
+      return mid;
+    }
+  }
+  if (low+1 == high) {
+    return ordered_find_geq(k, high, high);
+  }
+  if (p.get_key().less_than(k)) {
+    return ordered_find_geq(k, mid+1, high);
+  }
+  else {
+    return ordered_find_geq(k, low, mid-1);
+  }
+}
+
 bool Buffer::ordered_find(Key k, Value* v) {
   return ordered_find_bounds(k, v, 0, idx-1);
+}
+
+void Buffer::ordered_find_all(map<Key, Value>* results) {
+  return ordered_find_all_bounds(results, 0, idx-1);
+}
+
+void Buffer::ordered_find_all_bounds(map<Key, Value>* results, int low, int high) {
+  for (int i=low; i<=high; i++) {
+    Pair p = read(i);
+    results->insert(std::pair<Key, Value>(p.get_key(), p.get_value()));
+  }
+  return;
+}
+
+void Buffer::ordered_find_upper(Key k_1, map<Key, Value>* results) {
+  int low = ordered_find_geq(k_1, 0, idx-1);
+  int high = idx-1;
+  ordered_find_all_bounds(results, low, high);
+  return;
+}
+
+void Buffer::ordered_find_lower(Key k_2, map<Key, Value>* results) {
+  int low = 0;
+  int high = ordered_find_leq(k_2, 0, idx-1);
+  ordered_find_all_bounds(results, low, high);
+  return;
+}
+
+void Buffer::ordered_find_within(Key k_1, Key k_2, map<Key, Value>* results) {
+  int low = ordered_find_geq(k_1, 0, idx-1);
+  int high = ordered_find_leq(k_2, 0, idx-1);
+  ordered_find_all_bounds(results, low, high);
+  return;
 }
 
 void Buffer::print(int level) {

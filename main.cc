@@ -44,6 +44,15 @@ int main() {
       std::cout << v.get() << std::endl;
     }
   }
+  map<Key, Value> res = d.read_range(Key(80), Key(120));
+  std::cout << "Reading Range" << std::endl;
+  for (auto elem : res) {
+    if (elem.second.get_is_delete()) {
+      std::cout << elem.first.get() << ":" << "delete" << std::endl;
+    } else {
+      std::cout << elem.first.get() << ":" << elem.second.get() << std::endl;
+    }
+  }
   d.print_stats();
   return 0;
 }
