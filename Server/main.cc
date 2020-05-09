@@ -5,7 +5,7 @@
 #include <iostream>
 #include <thread>
 
-int main() {
+/*int main() {
   Database d;
   for (int i=0; i<101; i++) {
     std::cout << "Writing " << i << std::endl;
@@ -55,4 +55,4 @@ int main() {
   }
   d.print_stats();
   return 0;
-}
+}*/
