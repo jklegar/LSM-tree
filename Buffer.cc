@@ -104,8 +104,24 @@ bool Buffer::ordered_find(Key k, Value* v) {
   return ordered_find_bounds(k, v, 0, idx-1);
 }
 
-void Buffer::print() {
+void Buffer::print(int level) {
   for (int i=0; i<idx; i++) {
-    b[i].print();
+    b[i].print(level);
   }
+}
+
+void Buffer::add_keys(std::set<Key>* existing_keys, std::set<Key>* deleted_keys) {
+  for (int i=0; i<idx; i++) {
+    auto k = read(i).get_key();
+    if (existing_keys->find(k) != existing_keys->end() || deleted_keys->find(k) != deleted_keys->end()) {
+      continue;
+    }
+    bool v_is_del = read(i).get_value().get_is_delete();
+    if (v_is_del) {
+      deleted_keys->emplace(k);
+    } else {
+      existing_keys->emplace(k);
+    }
+  }
+  return;
 }

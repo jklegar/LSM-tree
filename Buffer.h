@@ -5,6 +5,7 @@
 #include "Options.h"
 #include "Pair.h"
 #include "Value.h"
+#include <set>
 #include <string>
 using namespace std;
 
@@ -23,7 +24,8 @@ class Buffer {
     bool is_null_buffer();
     bool unordered_find(Key k, Value* v);
     bool ordered_find(Key k, Value* v);
-    void print();
+    void print(int level);
+    void add_keys(std::set<Key>* existing_keys, std::set<Key>* deleted_keys);
 
   private:
     Pair b [file_length]; // gets initialized here using Pair's default constructor

@@ -14,3 +14,7 @@ bool Key::equals(Key k) {
 bool Key::less_than(Key k) {
   return (get() < k.get());
 }
+
+bool Key::operator<(Key k) const {
+  return (key < k.get());
+}

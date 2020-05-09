@@ -7,6 +7,7 @@ class Key {
     int get();
     bool equals(Key k);
     bool less_than(Key k);
+    bool operator<(Key k) const;
 
   private:
     int key;

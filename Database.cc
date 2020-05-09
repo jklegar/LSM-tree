@@ -1,6 +1,7 @@
 #include "Database.h"
-#include <thread>
 #include <cmath>
+#include <set>
+#include <thread>
 #include <iostream>
 
 Database::Database() {
@@ -22,6 +23,11 @@ void Database::write(Key k, Value v) {
   else {
     m.mbuffer.unlock();
   }
+  return;
+}
+
+void Database::delete_key(Key k) {
+  write(k, Value(0, true));
   return;
 }
 
@@ -233,9 +239,15 @@ Value Database::read(Key k) {
   return Value(0, true);
 }
 
-void Database::print_all() {
-  m.get_buffer()->print();
-  m.get_buffer_backup()->print();
+void Database::print_stats() {
+  std::set<Key> existing_keys;
+  std::set<Key> deleted_keys;
+  int level_counts [max_levels] = {};
+
+  m.get_buffer()->print(-1);
+  m.get_buffer_backup()->print(-1);
+  m.get_buffer()->add_keys(&existing_keys, &deleted_keys);
+  m.get_buffer_backup()->add_keys(&existing_keys, &deleted_keys);
 
   Buffer* b = new Buffer();
   for (int i=0; i<m.get_levels_number(); i++) {
@@ -247,11 +259,18 @@ void Database::print_all() {
       for (int t=0; t<run_info->get_files_number(); t++) {
         FileInfo* file_info = run_info->get_file(t);
         b->load_from(file_info->get_filename());
-        b->print();
+        b->print(i);
+        b->add_keys(&existing_keys, &deleted_keys);
+        level_counts[i] += b->len();
       }
     }
     m.mlevels[i].unlock();
   }
   delete b;
+  std::cout << "Buffer count: " << m.get_buffer()->len()+m.get_buffer_backup()->len() << std::endl;
+  for (int i=0; i<max_levels; i++) {
+    std::cout << "Level " << i << " count: " << level_counts[i] << std::endl;
+  }
+  std::cout << "Logical Pairs: " << existing_keys.size() << std::endl;
   return;
 }

@@ -28,6 +28,10 @@ bool Pair::key_equals(Pair p) {
   return get_key().equals(p.get_key());
 }
 
-void Pair::print() {
-  std::cout << get_key().get() << " " << get_value().get() << std::endl;
+void Pair::print(int level) {
+  if (get_value().get_is_delete()) {
+    std::cout << get_key().get() << ":" << "delete" << ":" << level << std::endl;
+  } else {
+  std::cout << get_key().get() << ":" << get_value().get() << ":" << level << std::endl;
+  }
 }

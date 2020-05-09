@@ -7,7 +7,7 @@
 
 int main() {
   Database d;
-  for (int i=0; i<59; i++) {
+  for (int i=0; i<101; i++) {
     std::cout << "Writing " << i << std::endl;
     d.write(Key(i), Value(i));
     d.write(Key(i), Value(-i));
@@ -22,9 +22,9 @@ int main() {
       std::cout << v.get() << std::endl;
     }
   }
-  /*for (int i=9; i>4; i--) {
-    std::cout << "Writing " << i << std::endl;
-    d.write(Key(i), Value(12-i));
+  for (int i=9; i>4; i--) {
+    std::cout << "Deleting " << i << std::endl;
+    d.delete_key(Key(i));
     Value v = d.read(Key(i));
     if (v.get_is_delete()) {
       std::cout << "delete" << std::endl;
@@ -32,9 +32,9 @@ int main() {
     else {
       std::cout << v.get() << std::endl;
     }
-  }*/
+  }
   std::cout << "Writing done" << std::endl;
-  for (int i=0; i<59; i++) {
+  for (int i=0; i<101; i++) {
     std::cout << "Reading " << i << " ";
     Value v = d.read(Key(i));
     if (v.get_is_delete()) {
@@ -44,6 +44,6 @@ int main() {
       std::cout << v.get() << std::endl;
     }
   }
-  d.print_all();
+  d.print_stats();
   return 0;
 }

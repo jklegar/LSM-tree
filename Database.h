@@ -13,10 +13,11 @@ class Database {
   public:
     Database();
     void write(Key k, Value v);
+    void delete_key(Key k);
     void merge_buffer(Buffer* b);
     void merge(int level_number, int merge_num);
     Value read(Key k);
-    void print_all();
+    void print_stats();
 
   private:
     Manifest m; // initialized here
