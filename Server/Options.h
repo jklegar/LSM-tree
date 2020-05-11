@@ -8,6 +8,6 @@ constexpr int file_length { 2 };
 constexpr int runs_per_level { 3 };
 constexpr int bloom_filter_bits { 16 };
 constexpr int max_levels { 16 };
-constexpr char data_directory[] = "/";
+constexpr char data_directory[] = "/tmp/data/";
 
 #endif
