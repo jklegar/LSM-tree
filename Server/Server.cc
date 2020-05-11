@@ -2,6 +2,7 @@
 #include "Key.h"
 #include "Value.h"
 #include "../httplib.h"
+#include <fstream>
 #include <iostream>
 #include <string>
 using namespace httplib;
@@ -44,6 +45,19 @@ int main() {
       } else {
         std::cout << elem.first.get() << ":" << elem.second.get() << std::endl;
       }
+    }
+  });
+
+  svr.Get("/load", [&](const Request& req, Response& res) {
+    std::string filename = req.get_header_value("Filename");
+    int length = std::stoi(req.get_header_value("Length"));
+    ifstream infile;
+    infile.open(filename);
+    int file_pairs [length * 2];
+    infile.read(reinterpret_cast<char*>(&file_pairs), length*sizeof(int)*2);
+    infile.close();
+    for (int i=0; i<length; i++) {
+      d.write(Key(file_pairs[2*i]), Value(file_pairs[2*i+1]));
     }
   });
 

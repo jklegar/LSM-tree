@@ -1,4 +1,5 @@
 #include "../httplib.h"
+#include <fstream>
 #include <iostream>
 
 int main(int argc, char** argv) {
@@ -35,6 +36,26 @@ int main(int argc, char** argv) {
         {"Key_2", argv[3]}
       };
       auto res = cli.Get("/range", headers);
+    }
+    else if (cmd.compare("l") == 0) {
+      httplib::Headers headers = {
+        {"Filename", argv[2]},
+        {"Length", argv[3]}
+      };
+      auto res = cli.Get("/load", headers);
+    }
+    else if (cmd.compare("m") == 0) {
+      std::string filename = argv[2];
+      int n = std::stoi(argv[3]);
+      int file_pairs [n*2];
+      for (int i=0; i<n; i++) {
+        file_pairs[2*i] = i;
+        file_pairs[2*i+1] = i;
+      }
+      std::ofstream outfile;
+      outfile.open(filename);
+      outfile.write(reinterpret_cast<char*>(&file_pairs), n*sizeof(int)*2);
+      outfile.close();
     }
   }
 }
