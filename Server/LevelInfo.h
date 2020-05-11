@@ -16,7 +16,7 @@ class LevelInfo {
     ~LevelInfo();
 
   private:
-    std::deque<RunInfo*> runs; // pointer to array of pointers
+    std::deque<RunInfo*> runs;
     int idx;
 };
 

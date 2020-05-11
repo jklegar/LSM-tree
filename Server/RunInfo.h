@@ -19,7 +19,7 @@ class RunInfo {
     ~RunInfo();
 
   private:
-    std::vector<FileInfo*> files; // pointer to array of pointers
+    std::vector<FileInfo*> files;
     BloomFilter* bloom_filter;
     int files_number;
 };

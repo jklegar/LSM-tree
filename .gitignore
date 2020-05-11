@@ -1,4 +1,4 @@
 *.swp
 output*
-benchmark/
 data/
+*.ipynb
