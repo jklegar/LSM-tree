@@ -2,19 +2,18 @@
 
 RunInfo::RunInfo(int hashes) {
   files_number = 0;
-  files = new FileInfo* [max_files_per_run];
   bloom_filter = new BloomFilter(bloom_filter_bits, hashes);
 }
 
 void RunInfo::add_file(std::string filename, int level_no, FencePointer fp) {
   FileInfo* f = new FileInfo(filename, level_no, fp);
-  files[files_number] = f;
+  files.push_back(f);
   files_number = files_number + 1;
   return;
 }
 
 FileInfo* RunInfo::get_file(int idx) {
-  return files[idx];
+  return files.at(idx);
 }
 
 bool RunInfo::possibly_contains(Key k) {
@@ -42,5 +41,4 @@ RunInfo::~RunInfo() {
   for (int i=0; i<get_files_number(); i++) {
     delete get_file(i);
   }
-  delete[] files;
 }
